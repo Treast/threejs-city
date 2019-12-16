@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Vector2 } from 'three';
 
 class Scene {
   private scene: THREE.Scene;
@@ -8,7 +9,7 @@ class Scene {
 
   private controls: OrbitControls;
 
-  private torusMesh: THREE.Mesh;
+  private buildings: THREE.Mesh[] = []
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -33,12 +34,32 @@ class Scene {
   }
 
   init() {
-    this.camera.position.set(2, 2, 2);
-    this.camera.lookAt(0, 0, 0);
-    const torusGeometry = new THREE.TorusKnotGeometry(0.8, 0.2, 200, 32);
-    const torusMaterial = new THREE.MeshNormalMaterial();
-    this.torusMesh = new THREE.Mesh(torusGeometry, torusMaterial);
-    this.scene.add(this.torusMesh);
+    const buildingWidth = 0.3;
+
+    this.camera.position.set(-1.5, 3, -1.5);
+    
+    for(let i = 0; i < 12; i += 1){
+      for(let j = 0; j < 12; j += 1){
+        const buildingHeight = Math.random() * 2 + 0.3;
+        const buildingGeometry = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingWidth)
+        const buildingMaterial = new THREE.MeshNormalMaterial()
+        const building = new THREE.Mesh(buildingGeometry, buildingMaterial)
+        building.translateY(buildingHeight / 2);
+        building.position.x = (buildingWidth + 0.05) * i + parseInt((i / 2).toString()) * 0.4
+        building.position.z = (buildingWidth + 0.05) * j + parseInt((j / 2).toString()) * 0.4
+
+        this.buildings.push(building)
+        this.scene.add(building)
+      }
+    }
+
+    const carGeometryLine = new THREE.LineCurve3(new THREE.Vector3(-0.4, 0, 0), new THREE.Vector3(-0.3, 0, 0));
+    const carGeometry = new THREE.TubeBufferGeometry(carGeometryLine, 25, 0.01, 8, false);
+    const carMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff
+    })
+    const car = new THREE.Line(carGeometry, carMaterial);
+    this.scene.add(car)
   }
 
   render() {
@@ -46,9 +67,6 @@ class Scene {
     this.renderer.render(this.scene, this.camera);
 
     this.controls.update();
-
-    this.torusMesh.rotation.x += 0.01;
-    this.torusMesh.rotation.y += 0.01;
   }
 }
 

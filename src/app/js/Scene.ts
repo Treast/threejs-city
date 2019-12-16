@@ -7,6 +7,11 @@ import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorSha
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
+interface Car {
+  mesh: THREE.Line;
+  side: boolean;
+}
+
 class Scene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
@@ -17,9 +22,7 @@ class Scene {
 
   private buildings: THREE.Mesh[] = [];
 
-  private cameraRotation: number = 0;
-
-  private car: THREE.Mesh;
+  private cars: Car[] = [];
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -45,7 +48,7 @@ class Scene {
   }
 
   init() {
-    this.camera.position.set(-3, 5, -3);
+    this.camera.position.set(-4, 5, -4);
     this.camera.lookAt(0, 0, 0);
 
     this.controls.autoRotate = true;
@@ -91,6 +94,8 @@ class Scene {
         building.translateY(buildingHeight / 2);
         building.position.x = (buildingWidth + 0.05) * i + parseInt((i / 2).toString(), 10) * 0.4;
         building.position.z = (buildingWidth + 0.05) * j + parseInt((j / 2).toString(), 10) * 0.4;
+        building.translateX(buildingWidth / 2);
+        building.translateZ(buildingWidth / 2);
 
         this.buildings.push(building);
         buildingGroup.add(building);
@@ -103,18 +108,51 @@ class Scene {
 
     this.scene.add(buildingGroup);
 
-    const carGeometryLine = new THREE.LineCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-3, 0, 0));
-    const carGeometry = new THREE.TubeBufferGeometry(carGeometryLine, 25, 0.001, 8, false);
-    const carMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-    });
+    for (let i = 0; i < 200; i += 1) {
+      const carGeometryLine = new THREE.LineCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-3, 0, 0));
+      const carGeometry = new THREE.TubeBufferGeometry(carGeometryLine, 25, 0.001, 8, false);
+      const carMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+      });
 
-    this.car = new THREE.Line(carGeometry, carMaterial);
-    this.car.position.set(buildingWidth * 2 + 0.05, 0, buildingWidth * 2 + 0.05);
-    this.car.translateX(-(box.max.x - box.min.x) / 2);
-    this.car.translateZ(-(box.max.z - box.min.z) / 2);
+      const direction = Math.random() < 0.5;
+      const side = Math.random() < 0.5;
+      const offsetA = Math.floor((Math.random() * size) / 2);
+      const offsetB = Math.floor((Math.random() * size) / 2);
 
-    this.scene.add(this.car);
+      const car = new THREE.Line(carGeometry, carMaterial);
+      car.position.set(
+        (buildingWidth * 2 + 0.05) * offsetA + parseInt((offsetA / 2).toString(), 10) * 0.4,
+        0,
+        (buildingWidth * 2 + 0.05) * offsetB + parseInt((offsetB / 2).toString(), 10) * 0.4,
+      );
+      car.translateX(-(box.max.x - box.min.x) / 2);
+      car.translateZ(-(box.max.z - box.min.z) / 2);
+
+      if (side) {
+        car.translateZ(100 * Math.random() - 50);
+      } else {
+        car.translateX(100 * Math.random() - 50);
+      }
+
+      //console.log(buildingWidth * 2 * offsetA + 0.05, 0, buildingWidth * 2 * offsetB + 0.05);
+
+      if (side) {
+        car.rotateY(Math.PI / 2);
+        // car.translateZ(box.max.z - box.min.z);
+      }
+
+      if (direction) {
+        // car.translateX(box.max.z - box.min.z);
+      }
+
+      this.cars.push({
+        mesh: car,
+        side,
+      });
+
+      this.scene.add(car);
+    }
   }
 
   render() {
@@ -124,11 +162,23 @@ class Scene {
 
     this.controls.update();
 
-    if (this.car.position.x > 30) {
-      this.car.position.x = -30;
-    }
+    const limit = 50;
 
-    this.car.position.x += 2;
+    this.cars.forEach(car => {
+      if (car.side) {
+        if (car.mesh.position.z > limit) {
+          car.mesh.position.z = -limit;
+        }
+
+        car.mesh.position.z += 2;
+      } else {
+        if (car.mesh.position.x > limit) {
+          car.mesh.position.x = -limit;
+        }
+
+        car.mesh.position.x += 2;
+      }
+    });
   }
 }
 

@@ -17,6 +17,10 @@ class Scene {
 
   private buildings: THREE.Mesh[] = [];
 
+  private cameraRotation: number = 0;
+
+  private car: THREE.Mesh;
+
   constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -25,7 +29,7 @@ class Scene {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(this.renderer.domElement);
 
-    //this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
     this.bind();
   }
@@ -42,6 +46,9 @@ class Scene {
 
   init() {
     this.camera.position.set(-3, 5, -3);
+    this.camera.lookAt(0, 0, 0);
+
+    this.controls.autoRotate = true;
 
     this.composer = new EffectComposer(this.renderer);
     const renderPass = new RenderPass(this.scene, this.camera);
@@ -96,24 +103,32 @@ class Scene {
 
     this.scene.add(buildingGroup);
 
-    const carGeometryLine = new THREE.LineCurve3(new THREE.Vector3(-0.4, 0, 0), new THREE.Vector3(-0.3, 0, 0));
-    const carGeometry = new THREE.TubeBufferGeometry(carGeometryLine, 25, 0.01, 8, false);
+    const carGeometryLine = new THREE.LineCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-3, 0, 0));
+    const carGeometry = new THREE.TubeBufferGeometry(carGeometryLine, 25, 0.001, 8, false);
     const carMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
     });
-    const car = new THREE.Line(carGeometry, carMaterial);
-    this.scene.add(car);
+
+    this.car = new THREE.Line(carGeometry, carMaterial);
+    this.car.position.set(buildingWidth * 2 + 0.05, 0, buildingWidth * 2 + 0.05);
+    this.car.translateX(-(box.max.x - box.min.x) / 2);
+    this.car.translateZ(-(box.max.z - box.min.z) / 2);
+
+    this.scene.add(this.car);
   }
 
   render() {
     requestAnimationFrame(() => this.render());
-    //this.renderer.render(this.scene, this.camera);
+    // this.renderer.render(this.scene, this.camera);
     this.composer.render();
 
-    this.camera.position.x += 0.001;
-    this.camera.position.z += 0.001;
+    this.controls.update();
 
-    //this.controls.update();
+    if (this.car.position.x > 30) {
+      this.car.position.x = -30;
+    }
+
+    this.car.position.x += 2;
   }
 }
 
